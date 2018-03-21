@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from pymodm import connect
 import models
 import datetime
+import numpy as np
 
 connect("mongodb://localhost:27017/heart_rate_app")  # open up connection to db
 app = Flask(__name__)
@@ -28,28 +29,64 @@ def heart_rate():
 @app.route("/api/heart_rate/<user_email>", methods=["GET"])
 def get_user_hr_readings(user_email):
   """
-  Returns the data dictionary below to the caller as JSON
+  Returns all heart rate readings for specified user
   """
   # data = {
   #   "name": "Cole"
   # }
-  try:
+  if(does_user_exist(user_email)):
       user = models.User.objects.raw({"_id": user_email}).first()  # Get the first user where _id=email
-      print_user(user.email)
-  except:
-      print('user does not exist')
-  data = {
-    "message": "Hello there, {0}".format(user_email)
-  }
-  return jsonify(data) # respond to the API caller with a JSON representation of data
+      user_data = {
+        "email": user.email,
+        "age": user.age,
+        "hr_readings": user.heart_rate,
+        "readings_ts": user.heart_rate_times
+      }
+      response_data = {
+        "status": 1,
+        "user_data": user_data
+      }
+  else:
+      response_data = {
+        "status": 0,
+        "error_message": user_email + " has no heart rate readings"
+      }
+
+  return jsonify(response_data) # respond to the API caller with a JSON representation of data
+
+@app.route("/api/heart_rate/average/<user_email>", methods=["GET"])
+def get_user_average_hr_readings(user_email):
+  """
+  Returns average heart rate readings for specified user
+  """
+  # data = {
+  #   "name": "Cole"
+  # }
+  if(does_user_exist(user_email)):
+      user = models.User.objects.raw({"_id": user_email}).first()  # Get the first user where _id=email
+      user_data = {
+        "email": user.email,
+        "age": user.age,
+        "hr_average": np.average(user.heart_rate),
+        "num_readings": len(user.heart_rate)
+      }
+      response_data = {
+        "status": 1,
+        "user_data": user_data
+      }
+  else:
+      response_data = {
+        "status": 0,
+        "error_message": user_email + " has no heart rate readings"
+      }
+
+  return jsonify(response_data) # respond to the API caller with a JSON representation of data
 
 def does_user_exist(email):
     try:
         user = models.User.objects.raw({"_id": email}).first()  # Get the first user where _id=email
-        print('user already exists')
         return(True)
     except:
-        print('user does not exist')
         return(False)
 
 def create_user(email, age, heart_rate, time):
