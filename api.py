@@ -131,7 +131,7 @@ def get_user_average_hr_readings_interval():
     if(is_datetime(r["heart_rate_average_since"]) is not True):
         data = {
             "success": "0",
-            "error_message": "invalid heart_rate_average_since-Expects datetime"
+            "error_message": "invalid heart_rate_average_since. datetime reqd"
         }
         return jsonify(data), 400
 
