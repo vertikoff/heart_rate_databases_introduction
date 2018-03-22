@@ -31,9 +31,7 @@ def get_user_hr_readings(user_email):
   """
   Returns all heart rate readings for specified user
   """
-  # data = {
-  #   "name": "Cole"
-  # }
+
   if(does_user_exist(user_email)):
       user = models.User.objects.raw({"_id": user_email}).first()  # Get the first user where _id=email
       user_data = {
@@ -59,9 +57,7 @@ def get_user_average_hr_readings(user_email):
   """
   Returns average heart rate readings for specified user
   """
-  # data = {
-  #   "name": "Cole"
-  # }
+
   if(does_user_exist(user_email)):
       user = models.User.objects.raw({"_id": user_email}).first()  # Get the first user where _id=email
       user_data = {
@@ -81,6 +77,41 @@ def get_user_average_hr_readings(user_email):
       }
 
   return jsonify(response_data) # respond to the API caller with a JSON representation of data
+
+@app.route("/api/heart_rate/interval_average", methods=["POST"])
+def get_user_average_hr_readings_interval():
+  """
+  Returns average heart rate readings for specified user within time range
+  """
+  r = request.get_json()
+  datetime_threshold = datetime.datetime.strptime(r["heart_rate_average_since"], "%Y-%m-%d %H:%M:%S.%f")
+  print(r["user_email"])
+  if(does_user_exist(r["user_email"])):
+      user = models.User.objects.raw({"_id": r["user_email"]}).first()  # Get the first user where _id=email
+      heart_rates_to_average = []
+      for idx, time in enumerate(user.heart_rate_times):
+          if(time > datetime_threshold):
+              print(idx, time)
+              heart_rates_to_average.append(user.heart_rate[idx])
+      user_data = {
+        "email": user.email,
+        "age": user.age,
+        "datetime_threshold": datetime_threshold,
+        "hr_average": np.average(heart_rates_to_average),
+        "num_readings": len(heart_rates_to_average)
+      }
+      response_data = {
+        "status": 1,
+        "user_data": user_data
+      }
+  else:
+      response_data = {
+        "status": 0,
+        "error_message": r["user_email"] + " has no heart rate readings"
+      }
+
+  return jsonify(response_data) # respond to the API caller with a JSON representation of data
+
 
 def does_user_exist(email):
     try:
