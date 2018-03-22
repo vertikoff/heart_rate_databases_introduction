@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from pymodm import connect
 import models
 import datetime
+from validate_email import validate_email
 import numpy as np
 
 connect("mongodb://localhost:27017/heart_rate_app")
@@ -21,7 +22,7 @@ def heart_rate():
         create_user(r["user_email"], r["user_age"], r["heart_rate"], ts_now)
 
     data = {"success": "1"}
-    return jsonify(data)
+    return jsonify(data), 200
 
 
 @app.route("/api/heart_rate/<user_email>", methods=["GET"])
@@ -124,6 +125,9 @@ def does_user_exist(email):
     except:
         return(False)
 
+
+def is_email_valid(email):
+    return(validate_email(email))
 
 def create_user(email, age, heart_rate, time):
     """
