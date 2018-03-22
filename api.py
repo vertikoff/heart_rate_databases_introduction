@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from pymodm import connect
 import models
 import datetime
+from validate_email import validate_email
 import numpy as np
 
 connect("mongodb://localhost:27017/heart_rate_app")
@@ -15,13 +16,34 @@ def heart_rate():
     """
     r = request.get_json()
     ts_now = datetime.datetime.now()
+    if(is_email_valid(r["user_email"]) is not True):
+        data = {
+            "success": "0",
+            "error_message": "invalid email"
+        }
+        return jsonify(data), 400
+
+    if(is_int_or_float(r["heart_rate"]) is not True):
+        data = {
+            "success": "0",
+            "error_message": "invalid heart_rate. Expects float or int."
+        }
+        return jsonify(data), 400
+
+    if(is_int_or_float(r["user_age"]) is not True):
+        data = {
+            "success": "0",
+            "error_message": "invalid age. Expects float or int."
+        }
+        return jsonify(data), 400
+
     if(does_user_exist(r["user_email"])):
         add_heart_rate(r["user_email"], r["heart_rate"], ts_now)
     else:
         create_user(r["user_email"], r["user_age"], r["heart_rate"], ts_now)
 
     data = {"success": "1"}
-    return jsonify(data)
+    return jsonify(data), 200
 
 
 @app.route("/api/heart_rate/<user_email>", methods=["GET"])
@@ -29,6 +51,13 @@ def get_user_hr_readings(user_email):
     """
     Returns all heart rate readings for specified user
     """
+
+    if(is_email_valid(user_email) is not True):
+        data = {
+            "success": "0",
+            "error_message": "invalid email"
+        }
+        return jsonify(data), 400
 
     if(does_user_exist(user_email)):
         user = models.User.objects.raw({"_id": user_email}).first()
@@ -48,7 +77,7 @@ def get_user_hr_readings(user_email):
             "error_message": user_email + " has no heart rate readings"
         }
 
-    return jsonify(response_data)
+    return jsonify(response_data), 200
 
 
 @app.route("/api/heart_rate/average/<user_email>", methods=["GET"])
@@ -56,6 +85,13 @@ def get_user_average_hr_readings(user_email):
     """
     Returns average heart rate readings for specified user
     """
+
+    if(is_email_valid(user_email) is not True):
+        data = {
+            "success": "0",
+            "error_message": "invalid email"
+        }
+        return jsonify(data), 400
 
     if(does_user_exist(user_email)):
         user = models.User.objects.raw({"_id": user_email}).first()
@@ -76,7 +112,7 @@ def get_user_average_hr_readings(user_email):
             "status": 0,
             "error_message": user_email + " has no heart rate readings"
         }
-    return jsonify(response_data)
+    return jsonify(response_data), 200
 
 
 @app.route("/api/heart_rate/interval_average", methods=["POST"])
@@ -85,10 +121,23 @@ def get_user_average_hr_readings_interval():
     Returns average heart rate readings for specified user within time range
     """
     r = request.get_json()
+    if(is_email_valid(r["user_email"]) is not True):
+        data = {
+            "success": "0",
+            "error_message": "invalid email"
+        }
+        return jsonify(data), 400
+
+    if(is_datetime(r["heart_rate_average_since"]) is not True):
+        data = {
+            "success": "0",
+            "error_message": "invalid heart_rate_average_since. datetime reqd"
+        }
+        return jsonify(data), 400
+
     ts_thresh = r["heart_rate_average_since"]
     datetime_threshold = datetime.datetime.strptime(ts_thresh,
                                                     "%Y-%m-%d %H:%M:%S.%f")
-    print(r["user_email"])
     if(does_user_exist(r["user_email"])):
         user = models.User.objects.raw({"_id": r["user_email"]}).first()
         heart_rates_to_average = []
@@ -114,13 +163,35 @@ def get_user_average_hr_readings_interval():
             "status": 0,
             "error_message": r["user_email"] + " has no heart rate readings"
         }
-    return jsonify(response_data)
+    return jsonify(response_data), 200
 
 
 def does_user_exist(email):
     try:
         user = models.User.objects.raw({"_id": email}).first()
         return(True)
+    except:
+        return(False)
+
+
+def is_email_valid(email):
+    return(validate_email(email))
+
+
+def is_int_or_float(val):
+    if(isinstance(val, int) or isinstance(val, float)):
+        return(True)
+    else:
+        return(False)
+
+
+def is_datetime(val):
+    try:
+        dt_string = datetime.datetime.strptime(val, "%Y-%m-%d %H:%M:%S.%f")
+        if(isinstance(dt_string, datetime.datetime)):
+            return(True)
+        else:
+            return(False)
     except:
         return(False)
 
