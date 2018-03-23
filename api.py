@@ -13,26 +13,32 @@ app = Flask(__name__)
 def heart_rate():
     """
     Stores heart rate measurement for user with this email
+    :param user_email: email (string) of user (POST param)
+    :param heart_rate: heart rate (float/int) of user (POST param)
+    :param user_age: user age (float/int) (POST param)
+    :returns success: 1/0 depending on request status
+    :returns status: 200 if OK. 400 if param error
+    :returns error_message: (only when status = 400)
     """
     r = request.get_json()
     ts_now = datetime.datetime.now()
     if(is_email_valid(r["user_email"]) is not True):
         data = {
-            "success": "0",
+            "success": 0,
             "error_message": "invalid email"
         }
         return jsonify(data), 400
 
     if(is_int_or_float(r["heart_rate"]) is not True):
         data = {
-            "success": "0",
+            "success": 0,
             "error_message": "invalid heart_rate. Expects float or int."
         }
         return jsonify(data), 400
 
     if(is_int_or_float(r["user_age"]) is not True):
         data = {
-            "success": "0",
+            "success": 0,
             "error_message": "invalid age. Expects float or int."
         }
         return jsonify(data), 400
@@ -42,7 +48,7 @@ def heart_rate():
     else:
         create_user(r["user_email"], r["user_age"], r["heart_rate"], ts_now)
 
-    data = {"success": "1"}
+    data = {"success": 1}
     return jsonify(data), 200
 
 
@@ -50,11 +56,19 @@ def heart_rate():
 def get_user_hr_readings(user_email):
     """
     Returns all heart rate readings for specified user
+    :params user_email: user email (GET param)
+    :returns success: 1/0 depending on request status
+    :returns status: 200 if OK. 400 if param error
+    :returns error_message: (only when status = 400)
+    :returns user_data.email: users email (when status = 200)
+    :returns user_data.age: user age (when status = 200)
+    :returns user_data.hr_reading: user heart rate readings (when status = 200)
+    :returns user_data.readings_ts: ts of reading inserts (when status = 200)
     """
 
     if(is_email_valid(user_email) is not True):
         data = {
-            "success": "0",
+            "success": 0,
             "error_message": "invalid email"
         }
         return jsonify(data), 400
@@ -84,11 +98,20 @@ def get_user_hr_readings(user_email):
 def get_user_average_hr_readings(user_email):
     """
     Returns average heart rate readings for specified user
+    :params user_email: user email (GET param)
+    :returns success: 1/0 depending on request status
+    :returns status: 200 if OK. 400 if param error
+    :returns error_message: (only when status = 400)
+    :returns user_data.email: users email (when status = 200)
+    :returns user_data.age: user age (when status = 200)
+    :returns user_data.hr_average: user average heart rate (when status = 200)
+    :returns user_data.num_readings: num hr readings in avg (when status = 200)
+    :returns is_user_tachycaric: bool is user avg hr tachycaric (status = 200)
     """
 
     if(is_email_valid(user_email) is not True):
         data = {
-            "success": "0",
+            "success": 0,
             "error_message": "invalid email"
         }
         return jsonify(data), 400
@@ -119,18 +142,29 @@ def get_user_average_hr_readings(user_email):
 def get_user_average_hr_readings_interval():
     """
     Returns average heart rate readings for specified user within time range
+    :params user_email: user email (POST param)
+    :param heart_rate_average_since: datestring of when to start avg calc
+    :returns success: 1/0 depending on request status
+    :returns status: 200 if OK. 400 if param error
+    :returns error_message: (only when status = 400)
+    :returns user_data.email: users email (when status = 200)
+    :returns user_data.age: user age (when status = 200)
+    :returns user_data.datetime_threshold: threshold to calc avg (status =200)
+    :returns user_data.hr_average: user average heart rate (when status = 200)
+    :returns user_data.num_readings: num hr readings in avg (when status = 200)
+    :returns is_user_tachycaric: bool is user avg hr tachycaric (status = 200)
     """
     r = request.get_json()
     if(is_email_valid(r["user_email"]) is not True):
         data = {
-            "success": "0",
+            "success": 0,
             "error_message": "invalid email"
         }
         return jsonify(data), 400
 
     if(is_datetime(r["heart_rate_average_since"]) is not True):
         data = {
-            "success": "0",
+            "success": 0,
             "error_message": "invalid heart_rate_average_since. datetime reqd"
         }
         return jsonify(data), 400
@@ -167,6 +201,11 @@ def get_user_average_hr_readings_interval():
 
 
 def does_user_exist(email):
+    """
+    Returns whether user exists in Mongo
+    :params email: user email
+    :returns True/False: boolean
+    """
     try:
         user = models.User.objects.raw({"_id": email}).first()
         return(True)
@@ -175,10 +214,20 @@ def does_user_exist(email):
 
 
 def is_email_valid(email):
+    """
+    Returns whether string is valid email address
+    :params email: user email
+    :returns True/False: boolean
+    """
     return(validate_email(email))
 
 
 def is_int_or_float(val):
+    """
+    Returns whether val is int/float
+    :params val: value to test
+    :returns True/False: boolean
+    """
     if(isinstance(val, int) or isinstance(val, float)):
         return(True)
     else:
@@ -186,6 +235,11 @@ def is_int_or_float(val):
 
 
 def is_datetime(val):
+    """
+    Returns whether val is able to be parsed as a datetime
+    :params val: value to test
+    :returns True/False: boolean
+    """
     try:
         dt_string = datetime.datetime.strptime(val, "%Y-%m-%d %H:%M:%S.%f")
         if(isinstance(dt_string, datetime.datetime)):
@@ -227,6 +281,12 @@ def add_heart_rate(email, heart_rate, time):
 
 
 def is_user_tachycaric(age, heart_rate):
+    """
+    Determines if user heart rate is tachycaric
+    :param age: str age of user
+    :param heart_rate: number heart_rate measurement of the user
+    :returns True/False: Boolean
+    """
     tac_thresholds = [
         {"min_age_years": 0, "heart_rate": 159},  # 1-2 days
         {"min_age_years": 0.0082, "heart_rate": 166},  # 3-6 days
