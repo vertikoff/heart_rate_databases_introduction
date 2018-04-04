@@ -49,7 +49,7 @@ def print_user(email):
     print(user.heart_rate_times)
 
 if __name__ == "__main__":
-    connect("mongodb://localhost:27017/heart_rate_app")
+    connect("mongodb://vcm-3581.vm.duke.edu/heart_rate_app")
     create_user(email="suyash@suyashkumar.com",
                 age=24,
                 heart_rate=60, time=datetime.datetime.now())
