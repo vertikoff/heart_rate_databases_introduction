@@ -10,6 +10,20 @@ connect("mongodb://vcm-3581.vm.duke.edu/heart_rate_app")
 app = Flask(__name__)
 CORS(app)
 
+
+@app.route("/api/get_users", methods=["GET"])
+def get_users():
+    emails = []
+    users = models.User.objects.all()
+    for user in users:
+        emails.append(user.email)
+    data = {
+        "success": 1,
+        "emails": emails
+    }
+    return jsonify(data), 200
+
+
 @app.route("/api/heart_rate", methods=["POST"])
 def heart_rate():
     """
