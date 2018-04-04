@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from pymodm import connect
-from flask_cors import CORS 
+from flask_cors import CORS
 import models
 import datetime
 from validate_email import validate_email
