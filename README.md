@@ -5,7 +5,7 @@ This code creates an API that fetches and persists heart rate data to a mongodb 
 To get the API up and running, perform the following commands in the root directory of this repository: 
 1) create a virtual environment: `virtualenv env`
 2) start the virtual environment: `source env/bin/activate`
-3) install all requirements: `pip -r install requirements.txt`  
+3) install all requirements: `pip install -r requirements.txt`  
 **NOTE:** the use of [screens](https://github.com/mlp6/Medical-Software-Design/blob/master/Lectures/cloud_deployment/main.md#screen) is helpful for the following steps  
 4) run `docker run -v $PWD/db:/data/db -p 27017:27017 mongo`
 5) run `gunicorn --bind 0.0.0.0:5003 api:app` (you can select the port you'd like gunicorn to listen to requests on - this repo defaults to 5003)
